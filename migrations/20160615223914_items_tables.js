@@ -1,3 +1,5 @@
+// TODO: fix this error message
+// Warning: a promise was created in a handler but was not returned from it
 exports.up = function(knex, Promise) {
   return Promise.all([
     knex.schema.createTableIfNotExists('purchased_items', function(table) {

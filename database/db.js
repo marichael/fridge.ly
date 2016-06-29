@@ -1,14 +1,8 @@
 var mysql = require('mysql');
 
-var knex = require('knex')({
-  client: 'mysql',
-  connection: {
-	  host     : 'localhost',
-	  user     : 'mari.miyachi',
-	  password : '',
-	  database : 'fridgely'
-  }
-});
+var env = process.env.NODE_ENV || 'development';
+var knexFile = require('../knexfile.js');
+var knex = require('knex')(knexFile[env]);
 
 var bookshelf = require('bookshelf')(knex);
 

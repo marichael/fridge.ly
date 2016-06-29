@@ -30,7 +30,6 @@ app.post('/items', function (req, res) {
 	if (!req.body) return res.sendStatus(400);
 
 	var itemList = req.body;
-	var count = 0;
 	promises = itemList.map(function(item) {
 		Item.where('name', item.name).fetch().then(function(results){
 			if (results === null) {
@@ -56,12 +55,11 @@ app.post('/items', function (req, res) {
 });
 
 // request should be a list with each element having a name, quantity, and unit
-app.delete('/removeItems', function (req, res) {
+app.delete('/items', function (req, res) {
 	if (!req.body) return res.sendStatus(400);
 
 	var itemList = req.body;
-	var count = 0;
-	itemList.forEach(function(item) {
+	promises = itemList.map(function(item) {
 		Item.where('name', item.name).fetch().then(function(results){
 			if (results === null) {
 				// error since any removed item should already exist
@@ -74,9 +72,9 @@ app.delete('/removeItems', function (req, res) {
 				if (results) return res.end('DELETE remove item');
 			});
 		});
-		if (++count === itemList.length) {
-			return res.send('Success');
-		}
+	});
+	Promise.all(promises).then(function() {
+		return res.send('Success');
 	});
 });
 

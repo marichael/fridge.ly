@@ -31,7 +31,7 @@ app.post('/items', function (req, res) {
 
 	var itemList = req.body;
 	var count = 0;
-	itemList.forEach(function(item) {
+	promises = itemList.map(function(item) {
 		Item.where('name', item.name).fetch().then(function(results){
 			if (results === null) {
 				Item.forge({name: item.name, quantity: item.quantity}).save().then(function(r) {
@@ -49,9 +49,9 @@ app.post('/items', function (req, res) {
 				});
 			}
 		});
-		if (++count === itemList.length) {
-			return res.send('Success');
-		}
+	});
+	Promise.all(promises).then(function() {
+		return res.send('Success');
 	});
 });
 

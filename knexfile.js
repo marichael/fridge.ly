@@ -1,6 +1,14 @@
 // Update with your config settings.
 
 module.exports = {
+  test: {
+    client: 'mysql',
+    connection: {
+      database: 'fridgely_test',
+      user:     'fridgely',
+      password: 'poop'
+    }
+  },
 
   development: {
     client: 'mysql',

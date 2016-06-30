@@ -3,6 +3,7 @@ var express = require('express'),
   bodyParser = require('body-parser'),
   mysql = require('mysql'),
   path = require('path'),
+	bookshelf = require('./database/db'),
   Item = require('./database/item'),
   PurchasedItem = require('./database/purchased_item'),
   UsedItem = require('./database/used_item');
@@ -30,28 +31,33 @@ app.post('/items', function (req, res) {
   if (!req.body) return res.sendStatus(400);
 
   var itemList = req.body;
-  promises = itemList.map(function(item) {
-    Item.where('name', item.name).fetch().then(function(results){
-      if (results === null) {
-        Item.forge({name: item.name, quantity: item.quantity}).save().then(function(r) {
-          var itemId = r.get('id');
-          PurchasedItem.forge({item_id: itemId, quantity: item.quantity, unit: 0, cost: 0}).save().then(function(r) {
-            if (r) console.log('post add item');
-          });
-        });
-      } else {
-        Item.forge().where({name: item.name}).save({quantity: parseInt(results.get('quantity'))+parseInt(item.quantity)}, { method: 'update' }).then(function(r){
-          var itemId = results.get('id');
-          PurchasedItem.forge({item_id: itemId, quantity: item.quantity, unit: 0, cost: 0}).save().then(function(r) {
-            if (r) console.log('POST add item');
-          });
-        });
-      }
-    });
-  });
-  Promise.all(promises).then(function() {
-    return res.send('Success');
-  });
+
+	bookshelf.transaction(function(t) {
+		promises = itemList.map(function(item) {
+	    return Item.where('name', item.name).fetch().then(function(results){
+	      if (results === null) {
+	        return Item.forge({name: item.name, quantity: item.quantity, unit: item.unit}).save(null, {transacting: t}).then(function(r) {
+	          var itemId = r.get('id');
+	          return PurchasedItem.forge({item_id: itemId, quantity: item.quantity, unit: item.unit, cost: 0}).save(null, {transacting: t});
+	        });
+	      } else {
+					if (item.unit !== results.get('unit')) {
+						return Promise.reject(`Unit mismatch for ${item.name}`);
+					} else {
+						return Item.forge().where({name: item.name}).save({quantity: parseFloat(results.get('quantity'))+parseFloat(item.quantity)}, {method: 'update', transacting: t}).then(function(r){
+		          var itemId = results.get('id');
+		          return PurchasedItem.forge({item_id: itemId, quantity: item.quantity, unit: item.unit, cost: 0}).save(null, {transacting: t});
+		        });
+					}
+	      }
+	    });
+	  });
+		return Promise.all(promises).then(t.commit).catch(t.rollback);
+	}).then(function(success) {
+		res.send('SUCCESS');
+	}).catch(function(failure) {
+		res.status(400).send(failure);
+	});
 });
 
 // request should be a list with each element having a name, quantity, and unit
@@ -59,23 +65,28 @@ app.delete('/items', function (req, res) {
   if (!req.body) return res.sendStatus(400);
 
   var itemList = req.body;
-  promises = itemList.map(function(item) {
-    Item.where('name', item.name).fetch().then(function(results){
-      if (results === null) {
-        // error since any removed item should already exist
-        return res.end(400);
-      } else {
-        Item.forge().where({name: item.name}).save({quantity: Math.max(0, results.get('quantity')-item.quantity)}, { method: 'update' });
-        var itemId = results.get('id');
-      }
-      UsedItem.forge({item_id: itemId, quantity: item.quantity, unit: 0}).save().then(function(results) {
-        if (results) return res.end('DELETE remove item');
-      });
-    });
-  });
-  Promise.all(promises).then(function() {
-    return res.send('Success');
-  });
+
+	bookshelf.transaction(function(t) {
+		promises = itemList.map(function(item) {
+			return Item.where('name', item.name).fetch().then(function(results){
+				if (results === null) {
+					return Promise.reject(`No purchased item exists for ${item.name}`);
+				} if (item.unit !== results.get('unit')) {
+					return Promise.reject(`Unit mismatch for ${item.name}`);
+				} else {
+					return Item.forge().where({name: item.name}).save({quantity: parseFloat(results.get('quantity'))-parseFloat(item.quantity)}, {method: 'update', transacting: t}).then(function(r) {
+						var itemId = results.get('id');
+						return UsedItem.forge({item_id: itemId, quantity: item.quantity, unit: item.unit}).save(null, {transacting: t})
+					});
+				}
+			});
+		});
+		return Promise.all(promises).then(t.commit).catch(t.rollback);
+	}).then(function(success) {
+		res.send('SUCCESS');
+	}).catch(function(failure) {
+		res.status(400).send(failure);
+	});
 });
 
 app.get('/items', function(req, res) {
@@ -90,4 +101,8 @@ app.get('/items', function(req, res) {
 
 http.createServer(app).listen(process.env.PORT || 3000, function () {
   console.log("Express server listening on port 3000");
+});
+
+process.on('uncaughtException', function(err) {
+  console.error(' Caught exception: ' + err);
 });

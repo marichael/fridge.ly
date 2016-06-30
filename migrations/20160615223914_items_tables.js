@@ -5,23 +5,23 @@ exports.up = function(knex, Promise) {
     knex.schema.createTableIfNotExists('purchased_items', function(table) {
       table.increments();
       table.integer('item_id').notNullable();
-      table.integer('quantity').notNullable();
-      table.string('unit').notNullable();
+      table.decimal('quantity').notNullable();
+      table.enu('unit', ['volume','weight','count']).notNullable();
       table.decimal('cost').notNullable();
       table.timestamp('purchased_at').defaultTo(knex.fn.now());
     }),
     knex.schema.createTableIfNotExists('used_items', function(table) {
       table.increments();
       table.integer('item_id').notNullable();
-      table.integer('quantity').notNullable();
-      table.string('unit').notNullable();
-      table.decimal('cost').notNullable();
+      table.decimal('quantity').notNullable();
+      table.enu('unit', ['volume','weight','count']).notNullable();
       table.timestamp('used_at').defaultTo(knex.fn.now());
     }),
     knex.schema.createTableIfNotExists('items', function(table) {
       table.increments();
       table.string('name').notNullable();
-      table.integer('quantity').notNullable();
+      table.decimal('quantity').notNullable();
+      table.enu('unit', ['volume','weight','count']).notNullable();
       table.timestamp('created_at').defaultTo(knex.fn.now());
     })
   ]);

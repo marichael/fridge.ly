@@ -40,15 +40,14 @@ app.post('/items', function (req, res) {
             var itemId = r.get('id');
             return PurchasedItem.forge({item_id: itemId, quantity: item.quantity, unit: item.unit, cost: 0}).save(null, {transacting: t});
           });
+        }
+        if (item.unit !== results.get('unit')) {
+          return Promise.reject(`Unit mismatch for ${item.name}`);
         } else {
-          if (item.unit !== results.get('unit')) {
-            return Promise.reject(`Unit mismatch for ${item.name}`);
-          } else {
-            return Item.forge().where({name: item.name}).save({quantity: parseFloat(results.get('quantity'))+parseFloat(item.quantity)}, {method: 'update', transacting: t}).then(function(r){
-              var itemId = results.get('id');
-              return PurchasedItem.forge({item_id: itemId, quantity: item.quantity, unit: item.unit, cost: 0}).save(null, {transacting: t});
-            });
-          }
+          return Item.forge().where({name: item.name}).save({quantity: parseFloat(results.get('quantity'))+parseFloat(item.quantity)}, {method: 'update', transacting: t}).then(function(r){
+            var itemId = results.get('id');
+            return PurchasedItem.forge({item_id: itemId, quantity: item.quantity, unit: item.unit, cost: 0}).save(null, {transacting: t});
+          });
         }
       });
     });
@@ -71,7 +70,8 @@ app.delete('/items', function (req, res) {
       return Item.where('name', item.name).fetch().then(function(results){
         if (results === null) {
           return Promise.reject(`No purchased item exists for ${item.name}`);
-        } if (item.unit !== results.get('unit')) {
+        }
+        if (item.unit !== results.get('unit')) {
           return Promise.reject(`Unit mismatch for ${item.name}`);
         } else {
           return Item.forge().where({name: item.name}).save({quantity: parseFloat(results.get('quantity'))-parseFloat(item.quantity)}, {method: 'update', transacting: t}).then(function(r) {

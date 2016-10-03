@@ -6,13 +6,14 @@ var express = require('express'),
   bookshelf = require('./database/db'),
   Item = require('./database/item'),
   PurchasedItem = require('./database/purchased_item'),
+  Recipe = require('./database/recipe'),
   UsedItem = require('./database/used_item');
 
 var app = express();
 app.use(bodyParser.json());
 app.use('/', express.static(path.join(__dirname, 'public')));
 
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({extended: true}))
 
 // TODO NO IDEA WHAT THIS SHIT IS
 // Additional middleware which will set headers that we need on each request.
@@ -24,6 +25,28 @@ app.use(function(req, res, next) {
   // Disable caching so we'll always get the latest comments.
   res.setHeader('Cache-Control', 'no-cache');
   next();
+});
+
+app.post('/recipes', function (req, res) {
+  if (!req.body) return res.sendStatus(400);
+
+  var recipe = req.body;
+
+  if (recipe.name === undefined) {
+    return res.sendStatus(400);
+  }
+
+    return Recipe.forge({
+      name: recipe.name,
+      book_name: recipe.book_name,
+      page_number: recipe.page_number,
+      link: recipe.link,
+    }).save(null).then(function(success) {
+      res.send('SUCCESS');
+    }).catch(function(failure) {
+      console.log(failure);
+      res.status(400).send(failure);
+    });
 });
 
 // request should be a list with each element having a name, quantity, unit, and cost
@@ -42,7 +65,7 @@ app.post('/items', function (req, res) {
           });
         }
         if (item.unit !== results.get('unit')) {
-          return Promise.reject('Unit mismatch for ${item.name}');
+          return Promise.reject("Unit mismatch for " + item.name);
         } else {
           return Item.forge().where({name: item.name}).save({quantity: parseFloat(results.get('quantity'))+parseFloat(item.quantity)}, {method: 'update', transacting: t}).then(function(r){
             var itemId = results.get('id');

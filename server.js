@@ -42,7 +42,7 @@ app.post('/items', function (req, res) {
           });
         }
         if (item.unit !== results.get('unit')) {
-          return Promise.reject(`Unit mismatch for ${item.name}`);
+          return Promise.reject('Unit mismatch for ${item.name}');
         } else {
           return Item.forge().where({name: item.name}).save({quantity: parseFloat(results.get('quantity'))+parseFloat(item.quantity)}, {method: 'update', transacting: t}).then(function(r){
             var itemId = results.get('id');
@@ -69,10 +69,10 @@ app.delete('/items', function (req, res) {
     promises = itemList.map(function(item) {
       return Item.where('name', item.name).fetch().then(function(results){
         if (results === null) {
-          return Promise.reject(`No purchased item exists for ${item.name}`);
+          return Promise.reject("No purchased item exists for " + item.name);
         }
         if (item.unit !== results.get('unit')) {
-          return Promise.reject(`Unit mismatch for ${item.name}`);
+          return Promise.reject("Unit mismatch for " + item.name);
         } else {
           return Item.forge().where({name: item.name}).save({quantity: parseFloat(results.get('quantity'))-parseFloat(item.quantity)}, {method: 'update', transacting: t}).then(function(r) {
             var itemId = results.get('id');

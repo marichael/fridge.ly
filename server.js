@@ -27,6 +27,16 @@ app.use(function(req, res, next) {
   next();
 });
 
+app.get('/recipes', function(req, res) {
+  new Recipe().fetchAll()
+    .then(function(recipes) {
+      res.json(recipes.toJSON());
+    }).catch(function(error) {
+      console.log(error);
+      res.send('An error occured');
+    });
+});
+
 app.post('/recipes', function (req, res) {
   if (!req.body) return res.sendStatus(400);
 

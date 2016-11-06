@@ -27,6 +27,16 @@ app.use(function(req, res, next) {
   next();
 });
 
+app.get('/recipes', function(req, res) {
+  new Recipe().fetchAll()
+    .then(function(recipes) {
+      res.json(recipes.toJSON());
+    }).catch(function(error) {
+      console.log(error);
+      res.send('An error occured');
+    });
+});
+
 app.post('/recipes', function (req, res) {
   if (!req.body) return res.sendStatus(400);
 
@@ -41,8 +51,8 @@ app.post('/recipes', function (req, res) {
       book_name: recipe.book_name,
       page_number: recipe.page_number,
       link: recipe.link,
-    }).save(null).then(function(success) {
-      res.send('SUCCESS');
+    }).save(null).then(function(item) {
+      res.json(item.toJSON());
     }).catch(function(failure) {
       console.log(failure);
       res.status(400).send(failure);

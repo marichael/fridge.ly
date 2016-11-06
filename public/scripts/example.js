@@ -62,7 +62,7 @@ var RecipeList = React.createClass({
     var recipeNodes = this.props.data.map(function(recipe) {
       return (
         <Recipe name={recipe.name} key={recipe.id}>
-          {recipe.quantity}
+          {recipe.name}
         </Recipe>
       );
     });
@@ -76,23 +76,19 @@ var RecipeList = React.createClass({
 
 var RecipeForm = React.createClass({
   getInitialState: function() {
-    return {name: '', quantity: ''};
+    return {name: ''};
   },
   handleNameChange: function(e) {
     this.setState({name: e.target.value});
   },
-  handleQuantityChange: function(e) {
-    this.setState({quantity: e.target.value});
-  },
   handleSubmit: function(e) {
     e.preventDefault();
     var name = this.state.name.trim();
-    var quantity = this.state.quantity;
-    if (!quantity || !name) {
+    if (!name) {
       return;
     }
-    this.props.onRecipeSubmit({name: name, quantity: quantity});
-    this.setState({name: '', quantity: ''});
+    this.props.onRecipeSubmit({name: name});
+    this.setState({name: ''});
   },
   render: function() {
     return (
@@ -102,12 +98,6 @@ var RecipeForm = React.createClass({
           placeholder="Recipe name"
           value={this.state.name}
           onChange={this.handleNameChange}
-        />
-        <input
-          type="number"
-          placeholder="0"
-          value={this.state.quantity}
-          onChange={this.handleQuantityChange}
         />
         <input type="submit" value="Post" />
       </form>
@@ -122,9 +112,6 @@ var Recipe = React.createClass({
         <h2 className="recipeName">
           	{this.props.name}
         </h2>
-        <h3 className="recipeQuantity">
-        	{this.props.quantity}
-        </h3>
         {this.props.children}
       </div>
     );

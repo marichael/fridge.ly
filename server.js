@@ -51,8 +51,8 @@ app.post('/recipes', function (req, res) {
       book_name: recipe.book_name,
       page_number: recipe.page_number,
       link: recipe.link,
-    }).save(null).then(function(success) {
-      res.send('SUCCESS');
+    }).save(null).then(function(item) {
+      res.json(item.toJSON());
     }).catch(function(failure) {
       console.log(failure);
       res.status(400).send(failure);
